@@ -29,19 +29,21 @@ const server = new McpServer({
 
 // ── Tool: remember ──────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "remember",
-  "Store a memory with optional tag, categories, and namespace",
   {
-    content: z.string().describe("The text content to remember"),
-    namespace: z.string().optional().describe("Scope isolation (e.g., 'echo', 'cat', 'shared')"),
-    tag: z.enum(["core", "crucial", "default"]).optional()
-      .describe("Decay tier: core=permanent, crucial=slow decay, default=normal decay"),
-    categories: z.array(z.string()).optional()
-      .describe("Semantic categories (e.g., ['preference', 'user'])"),
-    project: z.string().optional().describe("Project scope for filtered retrieval"),
-    author: z.string().optional().describe("Who created this memory"),
-    source: z.string().optional().describe("Origin context (tool, conversation, consolidation)"),
+    description: "Store a memory with optional tag, categories, and namespace",
+    inputSchema: {
+      content: z.string().describe("The text content to remember"),
+      namespace: z.string().optional().describe("Scope isolation (e.g., 'echo', 'cat', 'shared')"),
+      tag: z.enum(["core", "crucial", "default"]).optional()
+        .describe("Decay tier: core=permanent, crucial=slow decay, default=normal decay"),
+      categories: z.array(z.string()).optional()
+        .describe("Semantic categories (e.g., ['preference', 'user'])"),
+      project: z.string().optional().describe("Project scope for filtered retrieval"),
+      author: z.string().optional().describe("Who created this memory"),
+      source: z.string().optional().describe("Origin context (tool, conversation, consolidation)"),
+    },
   },
   async (params) => {
     const record = await memory.add({
@@ -75,16 +77,18 @@ server.tool(
 
 // ── Tool: recall ────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "recall",
-  "Search memories semantically by query",
   {
-    query: z.string().describe("The search query"),
-    namespace: z.string().optional().describe("Filter by namespace"),
-    limit: z.number().optional().describe("Max results (default 5)"),
-    project: z.string().optional().describe("Filter by project"),
-    categories: z.array(z.string()).optional().describe("Filter by categories"),
-    minWeight: z.number().optional().describe("Minimum weight threshold"),
+    description: "Search memories semantically by query",
+    inputSchema: {
+      query: z.string().describe("The search query"),
+      namespace: z.string().optional().describe("Filter by namespace"),
+      limit: z.number().optional().describe("Max results (default 5)"),
+      project: z.string().optional().describe("Filter by project"),
+      categories: z.array(z.string()).optional().describe("Filter by categories"),
+      minWeight: z.number().optional().describe("Minimum weight threshold"),
+    },
   },
   async (params) => {
     const results = await memory.search(params.query, {
@@ -120,11 +124,14 @@ server.tool(
 
 // ── Tool: forget ────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "forget",
-  "Delete a memory by ID",
   {
-    id: z.string().describe("The memory ID to delete"),
+    description: "Delete a memory by ID",
+    inputSchema: {
+      id: z.string().describe("The memory ID to delete"),
+    },
+    annotations: { destructiveHint: true },
   },
   async (params) => {
     const deleted = memory.delete(params.id);
@@ -141,12 +148,14 @@ server.tool(
 
 // ── Tool: bump ──────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "bump",
-  "Reinforce a memory's weight (recall reinforcement)",
   {
-    id: z.string().describe("The memory ID to reinforce"),
-    amount: z.number().optional().describe("Weight increase amount (default 0.1)"),
+    description: "Reinforce a memory's weight (recall reinforcement)",
+    inputSchema: {
+      id: z.string().describe("The memory ID to reinforce"),
+      amount: z.number().optional().describe("Weight increase amount (default 0.1)"),
+    },
   },
   async (params) => {
     const success = memory.bumpWeight(params.id, params.amount ?? 0.1);
@@ -169,10 +178,11 @@ server.tool(
 
 // ── Tool: decay ─────────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "decay",
-  "Trigger a decay cycle — reduces memory weights based on tag tiers",
-  {},
+  {
+    description: "Trigger a decay cycle — reduces memory weights based on tag tiers",
+  },
   async () => {
     const results = memory.decayAll();
     const total = Object.values(results).reduce((a, b) => a + b, 0);
@@ -191,12 +201,15 @@ server.tool(
 
 // ── Tool: inspect ───────────────────────────────────────────────
 
-server.tool(
+server.registerTool(
   "inspect",
-  "View a specific memory or aggregate stats",
   {
-    id: z.string().optional().describe("Memory ID to inspect (omit for stats)"),
-    namespace: z.string().optional().describe("Filter stats by namespace"),
+    description: "View a specific memory or aggregate stats",
+    inputSchema: {
+      id: z.string().optional().describe("Memory ID to inspect (omit for stats)"),
+      namespace: z.string().optional().describe("Filter stats by namespace"),
+    },
+    annotations: { readOnlyHint: true },
   },
   async (params) => {
     // Single memory inspection
