@@ -2,6 +2,10 @@
  * Core types for mnemo — portable cognitive memory.
  */
 
+import { config } from "dotenv";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
 // ── Decay tags ──────────────────────────────────────────────────
 
 export const DECAY_TAGS = ["core", "crucial", "default"] as const;
@@ -70,7 +74,17 @@ export interface MnemoConfig {
   dimensions: number;
 }
 
+/**
+ * Load config from .env file (if present) then environment variables.
+ * Looks for .env in cwd and beside the package root.
+ */
 export function loadConfig(): MnemoConfig {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+
+  // Load .env — dotenv does not overwrite existing env vars
+  config({ path: resolve(process.cwd(), ".env") });
+  config({ path: resolve(__dirname, "..", ".env") });
+
   return {
     dbPath: process.env.MNEMO_DB_PATH
       ?? joinHome(".mnemo", "memory.db"),
