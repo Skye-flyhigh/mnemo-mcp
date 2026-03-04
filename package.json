@@ -1,0 +1,30 @@
+{
+  "name": "mnemo",
+  "version": "0.1.0",
+  "description": "Portable cognitive memory MCP server with semantic search and decay",
+  "type": "module",
+  "bin": {
+    "mnemo": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "better-sqlite3": "^12.6.2",
+    "sqlite-vec": "0.1.7-alpha.2",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "author": "Skye"
+}
