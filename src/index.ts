@@ -10,6 +10,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
+import { readFileSync } from "node:fs";
+
 import { createEmbeddingProvider } from "./embeddings.js";
 import { Memory } from "./memory.js";
 import { VectorStore } from "./store.js";
@@ -17,6 +19,7 @@ import { loadConfig, DECAY_TAGS } from "./types.js";
 
 // ── Bootstrap ───────────────────────────────────────────────────
 
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf-8"));
 const config = loadConfig();
 const store = new VectorStore(config.dbPath, config.dimensions);
 const embeddings = createEmbeddingProvider(config);
@@ -24,7 +27,7 @@ const memory = new Memory(embeddings, store);
 
 const server = new McpServer({
   name: "mnemo-mcp",
-  version: "1.0.2",
+  version: pkg.version,
 });
 
 // ── Tool: remember ──────────────────────────────────────────────
