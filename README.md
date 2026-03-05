@@ -57,7 +57,28 @@ All config is passed via env vars through your MCP client config. Defaults work 
 | `MNEMO_DIMENSIONS` | `768` | `1536` | Embedding vector dimensions |
 | `MNEMO_DB_PATH` | `~/.mnemo/memory.db` | `~/.mnemo/memory.db` | SQLite database path |
 
-## MCP Client Integration
+## Supported Clients
+
+Works with any app that supports the [Model Context Protocol](https://modelcontextprotocol.io/clients):
+
+| Client | Platform | Notes |
+|--------|----------|-------|
+| **Claude Desktop** | Mac, Windows | Local + remote MCP servers |
+| **Claude Code** | Terminal | Full MCP support |
+| **Claude.ai** | Web | Remote MCP servers |
+| **ChatGPT** | Web | Developer Mode (Pro/Plus/Business/Enterprise) |
+| **Cursor** | Mac, Windows, Linux | AI code editor |
+| **Windsurf** | Mac, Windows, Linux | AI code editor |
+| **VS Code** | Mac, Windows, Linux | Via Continue, Cline, or Copilot-MCP extensions |
+| **Codex** (OpenAI) | Terminal | CLI coding agent |
+| **Amazon Q** | Terminal, IDEs | AWS coding assistant |
+| **Zed** | Mac, Linux | Code editor with MCP support |
+| **BoltAI** | Mac, iOS | Multi-provider AI chat |
+| **Chatbox** | Mac, Windows, Linux, Web | Open-source AI chat (37K+ stars) |
+
+And [500+ more MCP clients](https://www.pulsemcp.com/clients). If your app supports MCP, mnemo works with it.
+
+## Client Setup Examples
 
 ### Claude Code
 
