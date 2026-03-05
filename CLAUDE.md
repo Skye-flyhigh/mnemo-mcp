@@ -49,8 +49,10 @@ src/
 | Tool | Description |
 |------|-------------|
 | `remember` | Store a memory with tag, categories, namespace |
-| `recall` | Semantic search by query |
+| `remember_batch` | Store multiple memories in one call (batch embedding) |
+| `recall` | Semantic search by query (default 10 results) |
 | `forget` | Delete a memory by ID |
+| `update` | Patch content or metadata of an existing memory |
 | `bump` | Reinforce a memory's weight |
 | `decay` | Trigger decay cycle (tag-based weight reduction) |
 | `inspect` | View a specific memory or aggregate stats |
@@ -60,7 +62,7 @@ src/
 - **Decay tags**: `core` (never decays), `crucial` (0.01/cycle), `default` (0.05/cycle)
 - **Weight floor**: 0.1 — memories never fully disappear
 - **Namespaces**: Agent isolation (e.g., "echo", "cat", "shared")
-- **Deduplication**: Timing-based (10s cooldown) + hash-based (bumps weight instead of duplicating)
+- **Deduplication**: Timing-based (10s cooldown) + hash-based (exact match) + semantic (vector distance < 0.12)
 - **EmbeddingProvider interface**: `embed(text)` + `embedBatch(texts)` — implemented by OllamaEmbedding and OpenAIEmbedding
 - **Factory**: `createEmbeddingProvider(config)` selects provider based on `MNEMO_EMBEDDING_PROVIDER` env var
 

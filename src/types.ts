@@ -21,6 +21,9 @@ export const WEIGHT_FLOOR = 0.1;
 /** Timing-based deduplication cooldown (milliseconds). */
 export const DEDUP_COOLDOWN_MS = 10_000;
 
+/** Distance threshold for semantic deduplication (0 = identical, lower = stricter). */
+export const SEMANTIC_DEDUP_THRESHOLD = 0.12;
+
 // ── Memory data structures ──────────────────────────────────────
 
 export interface MemoryMetadata {
@@ -60,6 +63,17 @@ export interface CountFilters {
   namespace?: string;
   tag?: DecayTag;
   project?: string;
+}
+
+// ── Update options ─────────────────────────────────────────────
+
+export interface UpdateFields {
+  content?: string;
+  tag?: DecayTag;
+  categories?: string[];
+  namespace?: string;
+  project?: string;
+  source?: string;
 }
 
 // ── Embedding provider ─────────────────────────────────────────

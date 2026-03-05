@@ -15,9 +15,10 @@ import type {
   MemoryMetadata,
   MemoryRecord,
   SearchOptions,
+  UpdateFields,
 } from "./types.js";
 import { DECAY_RATES, WEIGHT_FLOOR } from "./types.js";
-import { isoNow } from "./utils.js";
+import { contentHash, isoNow } from "./utils.js";
 
 export class VectorStore {
   private db: Database.Database;
@@ -119,6 +120,60 @@ export class VectorStore {
     return result.changes > 0;
   }
 
+  update(id: string, fields: UpdateFields, newEmbedding?: number[]): boolean {
+    const existing = this.get(id);
+    if (!existing) return false;
+
+    const now = isoNow();
+
+    const txn = this.db.transaction(() => {
+      // Build SET clauses for provided fields
+      const sets: string[] = ["updated_at = ?"];
+      const params: unknown[] = [now];
+
+      if (fields.content !== undefined) {
+        sets.push("content = ?");
+        params.push(fields.content);
+      }
+      if (fields.tag !== undefined) {
+        sets.push("tag = ?");
+        params.push(fields.tag);
+      }
+      if (fields.categories !== undefined) {
+        sets.push("categories = ?");
+        params.push(JSON.stringify(fields.categories));
+      }
+      if (fields.namespace !== undefined) {
+        sets.push("namespace = ?");
+        params.push(fields.namespace);
+      }
+      if (fields.project !== undefined) {
+        sets.push("project = ?");
+        params.push(fields.project);
+      }
+      if (fields.source !== undefined) {
+        sets.push("source = ?");
+        params.push(fields.source);
+      }
+      if (fields.content !== undefined) {
+        sets.push("content_hash = ?");
+        params.push(contentHash(fields.content));
+      }
+
+      params.push(id);
+      this.db.prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+
+      // Update embedding if content changed
+      if (newEmbedding) {
+        const buffer = Buffer.from(new Float32Array(newEmbedding).buffer);
+        this.db.prepare("UPDATE memory_vectors SET embedding = ? WHERE id = ?").run(buffer, id);
+      }
+    });
+
+    txn();
+    return true;
+  }
+
   delete(id: string): boolean {
     const txn = this.db.transaction(() => {
       const result = this.db
@@ -149,7 +204,7 @@ export class VectorStore {
   }
 
   search(queryEmbedding: number[], options: SearchOptions = {}): MemoryRecord[] {
-    const limit = options.limit ?? 5;
+    const limit = options.limit ?? 10;
     const buffer = Buffer.from(new Float32Array(queryEmbedding).buffer);
 
     let sql = `
@@ -196,6 +251,40 @@ export class VectorStore {
     }
 
     return results.slice(0, limit);
+  }
+
+  /**
+   * Find the single nearest memory to a given embedding, optionally scoped by namespace.
+   * Returns [record, distance] or null if no memories exist.
+   */
+  findNearest(
+    queryEmbedding: number[],
+    namespace?: string
+  ): { record: MemoryRecord; distance: number } | null {
+    const buffer = Buffer.from(new Float32Array(queryEmbedding).buffer);
+
+    let sql = `
+      SELECT m.*, v.distance
+      FROM memory_vectors v
+      JOIN memories m ON v.id = m.id
+      WHERE v.embedding MATCH ? AND k = 4
+    `;
+    const params: unknown[] = [buffer];
+
+    if (namespace) {
+      sql += " AND m.namespace = ?";
+      params.push(namespace);
+    }
+
+    sql += " ORDER BY v.distance LIMIT 1";
+
+    const row = this.db.prepare(sql).get(...params) as Record<string, unknown> | undefined;
+    if (!row) return null;
+
+    return {
+      record: this.rowToRecord(row),
+      distance: row.distance as number,
+    };
   }
 
   count(filters: CountFilters = {}): number {

@@ -24,7 +24,7 @@ const memory = new Memory(embeddings, store);
 
 const server = new McpServer({
   name: "mnemo-mcp",
-  version: "1.0.1",
+  version: "1.0.2",
 });
 
 // ── Tool: remember ──────────────────────────────────────────────
@@ -75,6 +75,52 @@ server.registerTool(
   }
 );
 
+// ── Tool: remember_batch ─────────────────────────────────────────
+
+server.registerTool(
+  "remember_batch",
+  {
+    description: "Store multiple memories in a single call. Embeds all at once for efficiency. Deduplicates automatically.",
+    inputSchema: {
+      memories: z.array(z.object({
+        content: z.string().describe("The text content to remember"),
+        namespace: z.string().optional().describe("Scope isolation"),
+        tag: z.enum(["core", "crucial", "default"]).optional().describe("Decay tier (default: 'default')"),
+        categories: z.array(z.string()).optional().describe("Semantic categories"),
+        project: z.string().optional().describe("Project scope"),
+        author: z.string().optional().describe("Who created this memory"),
+        source: z.string().optional().describe("Origin context"),
+      })).describe("Array of memories to store"),
+    },
+  },
+  async (params) => {
+    const items = params.memories.map((m) => ({
+      content: m.content,
+      author: m.author ?? "unknown",
+      namespace: m.namespace,
+      tag: m.tag,
+      categories: m.categories,
+      source: m.source,
+      project: m.project,
+    }));
+
+    const result = await memory.addBatch(items);
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: [
+          `Batch complete:`,
+          `  Added: ${result.added}`,
+          `  Deduplicated: ${result.deduped}`,
+          result.failed > 0 ? `  Failed: ${result.failed}` : null,
+          `  Total submitted: ${params.memories.length}`,
+        ].filter(Boolean).join("\n"),
+      }],
+    };
+  }
+);
+
 // ── Tool: recall ────────────────────────────────────────────────
 
 server.registerTool(
@@ -84,7 +130,7 @@ server.registerTool(
     inputSchema: {
       query: z.string().describe("The search query"),
       namespace: z.string().optional().describe("Filter by namespace"),
-      limit: z.number().optional().describe("Max results (default 5)"),
+      limit: z.number().optional().describe("Max results (default 10, no hard cap)"),
       project: z.string().optional().describe("Filter by project"),
       categories: z.array(z.string()).optional().describe("Filter by categories"),
       minWeight: z.number().optional().describe("Minimum weight threshold"),
@@ -141,6 +187,55 @@ server.registerTool(
         text: deleted
           ? `Deleted memory: ${params.id}`
           : `Memory not found: ${params.id}`,
+      }],
+    };
+  }
+);
+
+// ── Tool: update ────────────────────────────────────────────────
+
+server.registerTool(
+  "update",
+  {
+    description: "Update an existing memory's content or metadata. Re-embeds automatically if content changes.",
+    inputSchema: {
+      id: z.string().describe("The memory ID to update"),
+      content: z.string().optional().describe("New content (triggers re-embedding)"),
+      tag: z.enum(["core", "crucial", "default"]).optional().describe("New decay tier"),
+      categories: z.array(z.string()).optional().describe("New categories (replaces existing)"),
+      namespace: z.string().optional().describe("New namespace"),
+      project: z.string().optional().describe("New project scope"),
+      source: z.string().optional().describe("New source context"),
+    },
+  },
+  async (params) => {
+    const { id, ...fields } = params;
+
+    // Check at least one field is being updated
+    const updates = Object.fromEntries(
+      Object.entries(fields).filter(([, v]) => v !== undefined)
+    );
+    if (Object.keys(updates).length === 0) {
+      return {
+        content: [{ type: "text" as const, text: "No fields to update. Provide at least one field to change." }],
+      };
+    }
+
+    const record = await memory.update(id, updates);
+    if (!record) {
+      return {
+        content: [{ type: "text" as const, text: `Memory not found or update failed: ${id}` }],
+      };
+    }
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: [
+          `Updated: ${record.content.slice(0, 100)}${record.content.length > 100 ? "..." : ""}`,
+          `ID: ${record.id}`,
+          `Tag: ${record.metadata.tag} | Weight: ${record.metadata.weight.toFixed(2)} | Namespace: ${record.metadata.namespace}`,
+        ].join("\n"),
       }],
     };
   }

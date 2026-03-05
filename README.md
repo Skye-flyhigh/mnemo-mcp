@@ -136,8 +136,10 @@ Pass provider config through the `env` block:
 | Tool | Description |
 |------|-------------|
 | `remember` | Store a memory with tag, categories, and namespace |
-| `recall` | Semantic search by query |
+| `remember_batch` | Store multiple memories in a single call (batch embedding) |
+| `recall` | Semantic search by query (default 10 results, no hard cap) |
 | `forget` | Delete a memory by ID |
+| `update` | Patch an existing memory's content or metadata (re-embeds if content changes) |
 | `bump` | Reinforce a memory's weight (+0.1 default) |
 | `decay` | Run a decay cycle (tag-based weight reduction) |
 | `inspect` | View a specific memory or aggregate stats |
@@ -153,6 +155,14 @@ Memories have a **tag** that controls how fast they fade:
 | `default` | 0.05/cycle | Normal decay — conversations, observations |
 
 Weight floor is **0.1** — memories never fully disappear.
+
+## Deduplication
+
+Mnemo prevents memory drift with three layers of dedup:
+
+1. **Timing-based** — identical content within 10 seconds is silently dropped
+2. **Hash-based** — exact duplicate content bumps the existing memory's weight instead of duplicating
+3. **Semantic** — if new content is very similar to an existing memory (vector distance < 0.12), the existing memory's weight is bumped instead
 
 ## Roadmap
 
