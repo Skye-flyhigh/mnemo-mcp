@@ -24,7 +24,7 @@ const memory = new Memory(embeddings, store);
 
 const server = new McpServer({
   name: "mnemo-mcp",
-  version: "1.0.0",
+  version: "1.0.1",
 });
 
 // ── Tool: remember ──────────────────────────────────────────────
