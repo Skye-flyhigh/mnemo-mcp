@@ -2,9 +2,6 @@
  * Core types for mnemo — portable cognitive memory.
  */
 
-import { config } from "dotenv";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 
 // ── Decay tags ──────────────────────────────────────────────────
 
@@ -65,34 +62,59 @@ export interface CountFilters {
   project?: string;
 }
 
+// ── Embedding provider ─────────────────────────────────────────
+
+export interface EmbeddingProvider {
+  /** Generate an embedding vector for a single text. */
+  embed(text: string): Promise<number[]>;
+  /** Generate embeddings for multiple texts. */
+  embedBatch(texts: string[]): Promise<number[][]>;
+}
+
+export type EmbeddingProviderType = "ollama" | "openai";
+
 // ── Config ──────────────────────────────────────────────────────
 
 export interface MnemoConfig {
   dbPath: string;
+  embeddingProvider: EmbeddingProviderType;
   embeddingModel: string;
-  ollamaUrl: string;
+  embeddingBaseUrl: string;
+  embeddingApiKey: string | null;
   dimensions: number;
 }
 
 /**
- * Load config from .env file (if present) then environment variables.
- * Looks for .env in cwd and beside the package root.
+ * Load config from environment variables.
+ * MCP clients pass env vars through their config — no .env file needed.
+ * Provider-aware defaults: switching provider auto-adjusts model, URL, and dimensions.
  */
 export function loadConfig(): MnemoConfig {
-  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const provider = (process.env.MNEMO_EMBEDDING_PROVIDER ?? "ollama") as EmbeddingProviderType;
 
-  // Load .env — dotenv does not overwrite existing env vars
-  config({ path: resolve(process.cwd(), ".env") });
-  config({ path: resolve(__dirname, "..", ".env") });
+  const defaultBaseUrl = provider === "openai"
+    ? "https://api.openai.com"
+    : "http://localhost:11434";
+
+  const defaultModel = provider === "openai"
+    ? "text-embedding-3-small"
+    : "nomic-embed-text";
+
+  const defaultDimensions = provider === "openai" ? "1536" : "768";
 
   return {
     dbPath: process.env.MNEMO_DB_PATH
       ?? joinHome(".mnemo", "memory.db"),
+    embeddingProvider: provider,
     embeddingModel: process.env.MNEMO_EMBEDDING_MODEL
-      ?? "nomic-embed-text",
-    ollamaUrl: process.env.MNEMO_OLLAMA_URL
-      ?? "http://localhost:11434",
-    dimensions: parseInt(process.env.MNEMO_DIMENSIONS ?? "768", 10),
+      ?? defaultModel,
+    embeddingBaseUrl: (
+      process.env.MNEMO_EMBEDDING_BASE_URL
+      ?? process.env.MNEMO_OLLAMA_URL
+      ?? defaultBaseUrl
+    ).replace(/\/$/, ""),
+    embeddingApiKey: process.env.MNEMO_EMBEDDING_API_KEY ?? null,
+    dimensions: parseInt(process.env.MNEMO_DIMENSIONS ?? defaultDimensions, 10),
   };
 }
 

@@ -10,7 +10,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { EmbeddingClient } from "./embeddings.js";
+import { createEmbeddingProvider } from "./embeddings.js";
 import { Memory } from "./memory.js";
 import { VectorStore } from "./store.js";
 import { loadConfig, DECAY_TAGS } from "./types.js";
@@ -19,12 +19,12 @@ import { loadConfig, DECAY_TAGS } from "./types.js";
 
 const config = loadConfig();
 const store = new VectorStore(config.dbPath, config.dimensions);
-const embeddings = new EmbeddingClient(config.embeddingModel, config.ollamaUrl);
+const embeddings = createEmbeddingProvider(config);
 const memory = new Memory(embeddings, store);
 
 const server = new McpServer({
-  name: "mnemo",
-  version: "0.1.0",
+  name: "mnemo-mcp",
+  version: "1.0.0",
 });
 
 // ── Tool: remember ──────────────────────────────────────────────

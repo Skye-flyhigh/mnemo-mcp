@@ -4,20 +4,19 @@
  * Ported from black-cat-py memory_manager.py.
  */
 
-import type { DecayTag, MemoryRecord, SearchOptions } from "./types.js";
+import type { DecayTag, EmbeddingProvider, MemoryRecord, SearchOptions } from "./types.js";
 import { DEDUP_COOLDOWN_MS } from "./types.js";
 import { contentHash, generateId, isoNow } from "./utils.js";
-import type { EmbeddingClient } from "./embeddings.js";
 import type { VectorStore } from "./store.js";
 
 export class Memory {
-  private embeddings: EmbeddingClient;
+  private embeddings: EmbeddingProvider;
   private store: VectorStore;
 
   /** Timing-based dedup cache: contentHash -> timestamp (ms). */
   private recentHashes = new Map<string, number>();
 
-  constructor(embeddings: EmbeddingClient, store: VectorStore) {
+  constructor(embeddings: EmbeddingProvider, store: VectorStore) {
     this.embeddings = embeddings;
     this.store = store;
   }
