@@ -15,6 +15,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
+    "postinstall": "npm rebuild better-sqlite3",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
