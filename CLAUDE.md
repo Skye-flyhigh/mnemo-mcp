@@ -1,10 +1,8 @@
-# CLAUDE.md — Mnemo
+# CLAUDE.md — mnemo-mcp
 
-## What is Mnemo
+## What is mnemo-mcp
 
-A standalone MCP server that provides persistent, decaying, associative memory to any MCP-compatible AI agent. Local-first, zero cloud dependency.
-
-Part of the Black Cat ecosystem by Skye, but designed to work independently with any MCP client (Claude Code, Cursor, VS Code, etc.).
+A standalone MCP server that provides persistent, decaying, associative memory to any MCP-compatible AI agent. Local-first, pluggable embeddings, zero mandatory cloud dependency.
 
 ### Key differentiator
 Cognitive decay. Memories fade unless reinforced. Core memories persist. This isn't a flat database — it's a portable hippocampus.
@@ -26,10 +24,12 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 ### Environment Variables
 ```bash
-MNEMO_DB_PATH=~/.mnemo/memory.db       # SQLite database path
-MNEMO_EMBEDDING_MODEL=nomic-embed-text  # Ollama model
-MNEMO_OLLAMA_URL=http://localhost:11434 # Ollama base URL
-MNEMO_DIMENSIONS=768                    # Embedding dimensions
+MNEMO_EMBEDDING_PROVIDER=ollama          # ollama (default) or openai
+MNEMO_EMBEDDING_MODEL=nomic-embed-text   # Model name (provider-aware defaults)
+MNEMO_EMBEDDING_BASE_URL=                # API base URL (provider-aware defaults)
+MNEMO_EMBEDDING_API_KEY=                 # Required for openai provider
+MNEMO_DIMENSIONS=768                     # Embedding dimensions
+MNEMO_DB_PATH=~/.mnemo/memory.db         # SQLite database path
 ```
 
 ## Architecture
@@ -38,9 +38,9 @@ MNEMO_DIMENSIONS=768                    # Embedding dimensions
 src/
   index.ts        # MCP server entry (stdio transport, 6 tools)
   store.ts        # VectorStore (better-sqlite3 + sqlite-vec)
-  embeddings.ts   # Ollama embedding client
+  embeddings.ts   # Embedding providers (Ollama + OpenAI-compatible) + factory
   memory.ts       # Memory manager (add, search, delete, bump, decay)
-  types.ts        # Types, constants, config
+  types.ts        # Types, interfaces, constants, config
   utils.ts        # Hash, ID generation helpers
 ```
 
@@ -61,19 +61,20 @@ src/
 - **Weight floor**: 0.1 — memories never fully disappear
 - **Namespaces**: Agent isolation (e.g., "echo", "cat", "shared")
 - **Deduplication**: Timing-based (10s cooldown) + hash-based (bumps weight instead of duplicating)
+- **EmbeddingProvider interface**: `embed(text)` + `embedBatch(texts)` — implemented by OllamaEmbedding and OpenAIEmbedding
+- **Factory**: `createEmbeddingProvider(config)` selects provider based on `MNEMO_EMBEDDING_PROVIDER` env var
 
 ## Dependencies
 
 - `@modelcontextprotocol/sdk` — MCP server framework
-- `better-sqlite3` — Sync SQLite bindings
+- `better-sqlite3` — Sync SQLite bindings (native addon, Node <23)
 - `sqlite-vec` — Vector similarity search extension
 - `zod` — Schema validation (MCP SDK requirement)
 
-Requires Ollama running locally for embedding generation.
-
 ## Design Principles
 
-1. **Local-first** — SQLite file, local embeddings, no cloud
+1. **Local-first** — SQLite file, local embeddings by default, no cloud required
 2. **Agent-agnostic** — Any MCP client connects and gets memory
 3. **Cognitive** — Memories decay, get reinforced, and self-organize
 4. **Small by conviction** — Minimal core, maximal intent
+5. **No new deps** — Native `fetch()` for all HTTP, no SDK bloat

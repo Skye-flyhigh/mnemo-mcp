@@ -1,20 +1,47 @@
 {
-  "name": "mnemo",
-  "version": "0.1.0",
+  "name": "mnemo-mcp",
+  "version": "1.0.0",
   "description": "Portable cognitive memory MCP server with semantic search and decay",
   "type": "module",
   "bin": {
-    "mnemo": "dist/index.js"
+    "mnemo-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "memory",
+    "ai",
+    "agent",
+    "cognitive",
+    "decay",
+    "vector-search",
+    "sqlite",
+    "ollama",
+    "openai",
+    "embeddings",
+    "model-context-protocol"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skye-flyhigh/mnemo-mcp.git"
+  },
+  "homepage": "https://github.com/skye-flyhigh/mnemo-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/skye-flyhigh/mnemo-mcp/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "better-sqlite3": "^12.6.2",
-    "dotenv": "^17.3.1",
     "sqlite-vec": "0.1.7-alpha.2",
     "zod": "^3.25.67"
   },
@@ -24,7 +51,7 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <23"
   },
   "license": "MIT",
   "author": "Skye"
