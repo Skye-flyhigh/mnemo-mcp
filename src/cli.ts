@@ -16,7 +16,12 @@ const packageDir = dirname(__dirname); // one level up from dist/
 
 async function preflight(): Promise<boolean> {
   try {
-    await import("better-sqlite3");
+    // Importing better-sqlite3 only loads the JS wrapper.
+    // The native .node addon is lazily loaded when new Database() is called.
+    // We must instantiate to trigger the actual dlopen check.
+    const { default: Database } = await import("better-sqlite3");
+    const db = new Database(":memory:");
+    db.close();
     return true;
   } catch (e: unknown) {
     const err = e as { code?: string };
