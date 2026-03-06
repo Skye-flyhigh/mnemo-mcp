@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 /**
- * Mnemo launcher — pre-flight check for native addon compatibility.
+ * Mnemo launcher — handles CLI commands and MCP server startup.
  *
- * better-sqlite3 is a native C++ addon locked to a specific Node ABI version.
- * npx caches old builds that break after Node upgrades. This launcher detects
- * the mismatch and auto-rebuilds before starting the server.
+ * Usage:
+ *   mnemo-mcp                  Start MCP server (stdio)
+ *   mnemo-mcp export [...]     CLI: export memories
+ *   mnemo-mcp search [...]     CLI: semantic search
+ *   mnemo-mcp inspect [...]    CLI: view memory or stats
+ *   mnemo-mcp decay            CLI: run decay cycle
+ *   mnemo-mcp count [...]      CLI: quick count
+ *   mnemo-mcp help             CLI: show help
+ *
+ * Pre-flight: detects better-sqlite3 ABI mismatch and auto-rebuilds.
  */
 
 import { execSync } from "node:child_process";
@@ -46,7 +53,7 @@ async function rebuild(): Promise<void> {
   }
 }
 
-// Pre-flight → rebuild if needed → start server
+// Pre-flight → rebuild if needed
 if (!(await preflight())) {
   await rebuild();
   // Verify the rebuild actually fixed it
@@ -57,4 +64,13 @@ if (!(await preflight())) {
   }
 }
 
+// Check for CLI subcommands before starting MCP server
+const { runCli } = await import("./commands.js");
+
+if (await runCli(process.argv)) {
+  // CLI command handled — exit cleanly
+  process.exit(0);
+}
+
+// No CLI command — start MCP server
 await import("./index.js");

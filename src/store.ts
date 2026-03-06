@@ -308,6 +308,29 @@ export class VectorStore {
     return row.cnt;
   }
 
+  listAll(filters: CountFilters = {}): MemoryRecord[] {
+    let sql = "SELECT * FROM memories WHERE 1=1";
+    const params: unknown[] = [];
+
+    if (filters.namespace) {
+      sql += " AND namespace = ?";
+      params.push(filters.namespace);
+    }
+    if (filters.tag) {
+      sql += " AND tag = ?";
+      params.push(filters.tag);
+    }
+    if (filters.project) {
+      sql += " AND project = ?";
+      params.push(filters.project);
+    }
+
+    sql += " ORDER BY timestamp DESC";
+
+    const rows = this.db.prepare(sql).all(...params) as Record<string, unknown>[];
+    return rows.map((r) => this.rowToRecord(r));
+  }
+
   listDecisions(limit: number = 50): MemoryRecord[] {
     const rows = this.db
       .prepare(
