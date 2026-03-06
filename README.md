@@ -39,6 +39,40 @@ cd mnemo-mcp && npm install && npm run build
 
 Then point your client to `"command": "node", "args": ["/path/to/mnemo-mcp/dist/cli.js"]`.
 
+### CLI commands
+
+Consult help
+
+```bash
+npx mnemo-mcp help
+```
+
+Help section:
+
+```bash
+Usage:
+  mnemo-mcp                              Start MCP server (default)
+  mnemo-mcp export [--md] [--ns <ns>]    Export memories as JSON or markdown
+  mnemo-mcp search <query> [-n <limit>]  Semantic search from terminal
+  mnemo-mcp inspect [<id>] [--ns <ns>]   View a memory or aggregate stats
+  mnemo-mcp decay                        Run a decay cycle
+  mnemo-mcp count [--ns <ns>]            Quick count
+  mnemo-mcp help                         Show this help
+
+Options:
+  --ns <namespace>    Filter by namespace
+  --md                Export as markdown (default: JSON)
+  -n <number>         Limit search results (default: 10)
+
+Environment:
+  MNEMO_DB_PATH                 Database path (default: ~/.mnemo/memory.db)
+  MNEMO_EMBEDDING_PROVIDER      ollama | openai (default: ollama)
+  MNEMO_EMBEDDING_MODEL         Model name
+  MNEMO_EMBEDDING_BASE_URL      Provider URL
+  MNEMO_EMBEDDING_API_KEY       API key (openai only)
+  MNEMO_DIMENSIONS              Vector dimensions
+```
+
 ### Embedding provider
 
 **Ollama (default, local)** — no API key needed, fully offline:
