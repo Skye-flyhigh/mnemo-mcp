@@ -1,6 +1,6 @@
 {
   "name": "mnemo-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Portable cognitive memory MCP server with semantic search and decay",
   "type": "module",
   "bin": {
