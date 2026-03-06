@@ -18,6 +18,27 @@ Gives any MCP-compatible AI agent persistent memory that behaves like human memo
 npx mnemo-mcp
 ```
 
+> **Node version note**: mnemo uses native addons (`better-sqlite3`, `sqlite-vec`) that are compiled for a specific Node ABI version. If you switch Node versions (e.g. via nvm), the cached npx install may break. Fix: `rm -rf ~/.npm/_npx/ && npx -y mnemo-mcp`, or use one of the stable install methods below.
+
+### Stable install (recommended for MCP clients)
+
+For MCP clients like Claude Code or Claude Desktop, a global install avoids npx cache issues:
+
+```bash
+npm install -g mnemo-mcp
+```
+
+Then configure your client with `"command": "mnemo-mcp"` instead of npx.
+
+Alternatively, run from source:
+
+```bash
+git clone https://github.com/skye-flyhigh/mnemo-mcp.git
+cd mnemo-mcp && npm install && npm run build
+```
+
+Then point your client to `"command": "node", "args": ["/path/to/mnemo-mcp/dist/cli.js"]`.
+
 ### Embedding provider
 
 **Ollama (default, local)** — no API key needed, fully offline:
@@ -34,15 +55,6 @@ MNEMO_EMBEDDING_API_KEY=sk-...
 ```
 
 This covers OpenAI, Azure OpenAI, Together AI, Voyage AI, Jina, and any service that speaks the `/v1/embeddings` format.
-
-### From source
-
-```bash
-git clone https://github.com/skye-flyhigh/mnemo-mcp.git
-cd mnemo-mcp
-npm install
-npm run build
-```
 
 ## Configuration
 
