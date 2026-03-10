@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { VectorStore } from "../src/store.js";
+import { DECAY_RATES } from "../src/types.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -179,6 +180,30 @@ describe("VectorStore", () => {
     expect(store.get("r1")!.metadata.weight).toBe(0.5);   // unchanged
     expect(store.get("r2")!.metadata.weight).toBe(0.49);   // -0.01
     expect(store.get("r3")!.metadata.weight).toBe(0.45);   // -0.05
+  });
+
+  it("core memories are completely immune to decay (SQL-level exclusion)", () => {
+    const record = makeRecord("core1", "I am immortal", { tag: "core", weight: 0.8 });
+    store.insert(record, makeVector(1));
+
+    const before = store.get("core1")!;
+    const originalUpdatedAt = before.metadata.updated_at;
+
+    // Run 100 decay cycles - core should be completely untouched
+    for (let i = 0; i < 100; i++) {
+      store.decayWeights();
+    }
+
+    const after = store.get("core1")!;
+    expect(after.metadata.weight).toBe(0.8); // Weight unchanged
+    expect(after.metadata.updated_at).toBe(originalUpdatedAt); // Timestamp untouched
+  });
+
+  it("core rate must be 0.0 (runtime assertion)", () => {
+    // This test documents the immutability requirement
+    // If someone changes DECAY_RATES.core, the module will throw on import
+    // DECAY_RATES is already imported at top of file
+    expect(DECAY_RATES.core).toBe(0.0);
   });
 
   it("decay respects weight floor", () => {

@@ -8,12 +8,20 @@
 export const DECAY_TAGS = ["core", "crucial", "default"] as const;
 export type DecayTag = (typeof DECAY_TAGS)[number];
 
-/** Tag-based decay rates applied once per cycle. */
-export const DECAY_RATES: Record<DecayTag, number> = {
-  core: 0.0,      // Never decays (identity, fundamental values)
+/** Tag-based decay rates applied once per cycle.
+ *  CORE RATE MUST STAY 0.0 - core memories are immortal and excluded from decay SQL.
+ *  Changing core rate without updating store.ts decayWeights() will break immortality.
+ */
+export const DECAY_RATES: Record<DecayTag, number> = Object.freeze({
+  core: 0.0,      // IMMORTAL: Never decays, excluded from SQL decay (identity, fundamental values)
   crucial: 0.01,  // Slow decay (important relationships, key facts)
   default: 0.05,  // Normal decay
-};
+});
+
+// Runtime assertion to catch config drift
+if (DECAY_RATES.core !== 0.0) {
+  throw new Error(`[mnemo] CRITICAL: core decay rate must be 0.0, got ${DECAY_RATES.core}. Core memory immortality compromised.`);
+}
 
 /** Minimum weight — memories never drop below this. */
 export const WEIGHT_FLOOR = 0.1;

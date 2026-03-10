@@ -347,18 +347,23 @@ export class VectorStore {
     const results: Record<string, number> = {};
     const now = isoNow();
 
+    // Core memories are immortal - excluded at SQL level for bulletproof protection
+    const stmt = this.db.prepare(`
+      UPDATE memories
+      SET weight = MAX(?, weight - ?),
+          updated_at = ?
+      WHERE tag = ? AND weight > ? AND tag != 'core'
+    `);
+
     for (const [tag, rate] of Object.entries(DECAY_RATES)) {
       if (rate === 0) {
+        // Double-check: core rate must be 0.0 (enforced by types.ts, but guard here too)
+        if (tag !== 'core') {
+          console.warn(`[mnemo] Non-core tag '${tag}' has zero decay rate - skipping`);
+        }
         results[tag] = 0;
         continue;
       }
-
-      const stmt = this.db.prepare(`
-        UPDATE memories
-        SET weight = MAX(?, weight - ?),
-            updated_at = ?
-        WHERE tag = ? AND weight > ?
-      `);
 
       const result = stmt.run(WEIGHT_FLOOR, rate, now, tag, WEIGHT_FLOOR);
       results[tag] = result.changes;
