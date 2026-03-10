@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { VectorStore } from "../src/store.js";
 import { Memory } from "../src/memory.js";
-import type { MnemoConfig } from "../src/types.js";
 import { MockEmbedding } from "./mock-embeddings.js";
+import { mockConfig } from "./fixtures.js";
 import {
   parseArgs,
   formatMemoryJson,
@@ -23,17 +23,6 @@ let tmpDir: string;
 let store: VectorStore;
 let memory: Memory;
 let deps: CliDeps;
-
-const mockConfig: MnemoConfig = {
-  dbPath: ":memory:",
-  embeddingProvider: "ollama",
-  embeddingModel: "nomic-embed-text",
-  embeddingBaseUrl: "http://localhost:11434",
-  embeddingApiKey: null,
-  dimensions: 768,
-  autoReinforce: true,
-  reinforceAmount: 0.05,
-};
 
 beforeEach(async () => {
   tmpDir = mkdtempSync(join(tmpdir(), "mnemo-cli-test-"));

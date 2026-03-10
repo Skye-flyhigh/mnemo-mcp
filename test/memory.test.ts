@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Memory } from "../src/memory.js";
 import { VectorStore } from "../src/store.js";
-import type { MnemoConfig } from "../src/types.js";
 import { MockEmbedding } from "./mock-embeddings.js";
+import { mockConfig } from "./fixtures.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -11,17 +11,6 @@ let memory: Memory;
 let store: VectorStore;
 let embeddings: MockEmbedding;
 let tmpDir: string;
-
-const mockConfig: MnemoConfig = {
-  dbPath: ":memory:",
-  embeddingProvider: "ollama",
-  embeddingModel: "nomic-embed-text",
-  embeddingBaseUrl: "http://localhost:11434",
-  embeddingApiKey: null,
-  dimensions: 768,
-  autoReinforce: true,
-  reinforceAmount: 0.05,
-};
 
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), "mnemo-test-"));
