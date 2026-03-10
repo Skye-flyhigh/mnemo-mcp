@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Memory } from "../src/memory.js";
 import { VectorStore } from "../src/store.js";
+import type { MnemoConfig } from "../src/types.js";
 import { MockEmbedding } from "./mock-embeddings.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -11,11 +12,22 @@ let store: VectorStore;
 let embeddings: MockEmbedding;
 let tmpDir: string;
 
+const mockConfig: MnemoConfig = {
+  dbPath: ":memory:",
+  embeddingProvider: "ollama",
+  embeddingModel: "nomic-embed-text",
+  embeddingBaseUrl: "http://localhost:11434",
+  embeddingApiKey: null,
+  dimensions: 768,
+  autoReinforce: true,
+  reinforceAmount: 0.05,
+};
+
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), "mnemo-test-"));
   store = new VectorStore(join(tmpDir, "test.db"), 768);
   embeddings = new MockEmbedding();
-  memory = new Memory(embeddings, store);
+  memory = new Memory(embeddings, store, mockConfig);
 });
 
 afterEach(() => {
@@ -135,6 +147,43 @@ describe("Memory", () => {
     const results = await memory.search("cats");
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].distance).toBeDefined();
+  });
+
+  it("search auto-reinforces returned memories", async () => {
+    const record = await memory.add({ content: "auto-reinforce test", author: "echo" });
+    const originalWeight = record!.metadata.weight;
+
+    // Search should bump the weight
+    await memory.search("auto-reinforce test");
+
+    const afterSearch = memory.get(record!.id);
+    expect(afterSearch!.metadata.weight).toBeCloseTo(originalWeight + mockConfig.reinforceAmount, 2);
+  });
+
+  it("search auto-reinforcement respects 1.0 cap", async () => {
+    const record = await memory.add({ content: "max weight test", author: "echo", weight: 0.98 });
+
+    // Search multiple times - weight should cap at 1.0
+    await memory.search("max weight test");
+    await memory.search("max weight test");
+    await memory.search("max weight test");
+
+    const afterSearches = memory.get(record!.id);
+    expect(afterSearches!.metadata.weight).toBe(1.0);
+  });
+
+  it("search with autoReinforce disabled does not bump weight", async () => {
+    // Create a new memory with disabled reinforcement
+    const noReinforceConfig = { ...mockConfig, autoReinforce: false };
+    const noReinforceMemory = new Memory(embeddings, store, noReinforceConfig);
+
+    const record = await noReinforceMemory.add({ content: "no reinforce test", author: "echo" });
+    const originalWeight = record!.metadata.weight;
+
+    await noReinforceMemory.search("no reinforce test");
+
+    const afterSearch = noReinforceMemory.get(record!.id);
+    expect(afterSearch!.metadata.weight).toBe(originalWeight);
   });
 
   // ── Get / Delete ───────────────────────────────────────────────

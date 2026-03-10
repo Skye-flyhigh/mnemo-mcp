@@ -14,8 +14,8 @@
 import { createEmbeddingProvider } from "./embeddings.js";
 import { Memory } from "./memory.js";
 import { VectorStore } from "./store.js";
-import { loadConfig, DECAY_TAGS } from "./types.js";
 import type { MemoryRecord } from "./types.js";
+import { DECAY_TAGS, loadConfig } from "./types.js";
 
 export interface CliDeps {
   store: VectorStore;
@@ -26,7 +26,7 @@ function bootstrap(): CliDeps {
   const config = loadConfig();
   const store = new VectorStore(config.dbPath, config.dimensions);
   const embeddings = createEmbeddingProvider(config);
-  const memory = new Memory(embeddings, store);
+  const memory = new Memory(embeddings, store, config);
   return { store, memory };
 }
 

@@ -4,7 +4,7 @@
  * Ported from black-cat-py memory_manager.py.
  */
 
-import type { DecayTag, EmbeddingProvider, MemoryRecord, SearchOptions, UpdateFields } from "./types.js";
+import type { DecayTag, EmbeddingProvider, MemoryRecord, MnemoConfig, SearchOptions, UpdateFields } from "./types.js";
 import { DEDUP_COOLDOWN_MS, SEMANTIC_DEDUP_THRESHOLD } from "./types.js";
 import { contentHash, generateId, isoNow } from "./utils.js";
 import type { VectorStore } from "./store.js";
@@ -12,13 +12,15 @@ import type { VectorStore } from "./store.js";
 export class Memory {
   private embeddings: EmbeddingProvider;
   private store: VectorStore;
+  private config: MnemoConfig;
 
   /** Timing-based dedup cache: contentHash -> timestamp (ms). */
   private recentHashes = new Map<string, number>();
 
-  constructor(embeddings: EmbeddingProvider, store: VectorStore) {
+  constructor(embeddings: EmbeddingProvider, store: VectorStore, config: MnemoConfig) {
     this.embeddings = embeddings;
     this.store = store;
+    this.config = config;
   }
 
   // ── Add ───────────────────────────────────────────────────────
@@ -222,7 +224,17 @@ export class Memory {
       return [];
     }
 
-    return this.store.search(embedding, options);
+    const results = this.store.search(embedding, options);
+
+    // Fire-and-forget reinforcement: non-blocking weight bumps for accessed memories
+    if (this.config.autoReinforce && results.length > 0) {
+      // Bump all results in background (synchronously, fire-and-forget)
+      for (const r of results) {
+        this.bumpWeight(r.id, this.config.reinforceAmount);
+      }
+    }
+
+    return results;
   }
 
   // ── Single-record operations ──────────────────────────────────

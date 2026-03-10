@@ -104,6 +104,8 @@ export interface MnemoConfig {
   embeddingBaseUrl: string;
   embeddingApiKey: string | null;
   dimensions: number;
+  autoReinforce: boolean;
+  reinforceAmount: number;
 }
 
 /**
@@ -137,6 +139,8 @@ export function loadConfig(): MnemoConfig {
     ).replace(/\/$/, ""),
     embeddingApiKey: process.env.MNEMO_EMBEDDING_API_KEY ?? null,
     dimensions: parseInt(process.env.MNEMO_DIMENSIONS ?? defaultDimensions, 10),
+    autoReinforce: process.env.MNEMO_AUTO_REINFORCE !== "false",
+    reinforceAmount: parseFloat(process.env.MNEMO_REINFORCE_AMOUNT ?? "0.05"),
   };
 }
 

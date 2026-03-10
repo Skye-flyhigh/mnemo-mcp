@@ -23,7 +23,7 @@ const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url),
 const config = loadConfig();
 const store = new VectorStore(config.dbPath, config.dimensions);
 const embeddings = createEmbeddingProvider(config);
-const memory = new Memory(embeddings, store);
+const memory = new Memory(embeddings, store, config);
 
 const server = new McpServer({
   name: "mnemo-mcp",
